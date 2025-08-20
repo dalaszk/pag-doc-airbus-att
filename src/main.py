@@ -36,8 +36,14 @@ CORS(app, supports_credentials=True)
 app.register_blueprint(candidature_bp, url_prefix='/api')
 app.register_blueprint(admin_bp, url_prefix='/admin')
 
-# Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
+# Database configuration - Use temporary directory for Railway compatibility
+db_path = os.environ.get('DATABASE_URL')
+if db_path is None:
+    # For local development or Railway, use a temporary directory
+    temp_dir = os.environ.get('TMPDIR', '/tmp')
+    db_path = f"sqlite:///{os.path.join(temp_dir, 'app.db')}"
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
