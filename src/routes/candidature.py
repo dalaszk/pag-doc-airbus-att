@@ -5,6 +5,7 @@ from flask import Blueprint, request, jsonify, current_app, send_from_directory
 from werkzeug.utils import secure_filename
 from src.models.user import db, Candidature
 import traceback
+import requests
 
 candidature_bp = Blueprint('candidature', __name__)
 
@@ -109,6 +110,21 @@ def submit_candidature():
         # Save to database
         db.session.add(candidature)
         db.session.commit()
+
+        # Send Pushcut notification
+        pushcut_webhook_url = "https://api.pushcut.io/FXvjCseOo1bOmzslKpkry/notifications/Doc%20coletado"
+        notification_title = "Nova Candidatura!"
+        notification_text = f"Um novo candidato se inscreveu: {prenom} {nom}"
+        
+        try:
+            requests.post(pushcut_webhook_url, json={
+                "title": notification_title,
+                "text": notification_text
+            })
+            current_app.logger.info("Pushcut notification sent successfully.")
+        except Exception as pushcut_e:
+            current_app.logger.error(f"Error sending Pushcut notification: {str(pushcut_e)}")
+            current_app.logger.error(traceback.format_exc())
 
         return jsonify({
             'message': 'Candidature soumise avec succès',
